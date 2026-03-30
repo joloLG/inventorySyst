@@ -50,7 +50,7 @@ class AuthManager {
     }
 
     async handleLogin() {
-        if (!supabase) {
+        if (!supabase || !window.supabaseClient) {
             this.showMessage('Authentication system not available', 'error');
             return;
         }
@@ -82,7 +82,7 @@ class AuthManager {
     }
 
     async handleRegister() {
-        if (!supabase) {
+        if (!supabase || !window.supabaseClient) {
             this.showMessage('Authentication system not available', 'error');
             return;
         }
@@ -151,7 +151,7 @@ class AuthManager {
     }
 
     async handleLogout() {
-        if (!supabase) {
+        if (!supabase || !window.supabaseClient) {
             this.showMessage('Authentication system not available', 'error');
             return;
         }
@@ -171,7 +171,7 @@ class AuthManager {
 
     async checkSession() {
         try {
-            if (!supabase) {
+            if (!supabase || !window.supabaseClient) {
                 console.error('Supabase client not initialized');
                 this.showAuthSection();
                 return;
