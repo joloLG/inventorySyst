@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .warning { color: orange; font-weight: bold; }
+        .info { color: blue; }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2980b9; }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .result.success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .result.error { background: #f8d7da; border: 1px solid #f5c6cb; }
+        .result.warning { background: #fff3cd; border: 1px solid #ffeaa7; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>🔍 Supabase Connection Diagnostics</h1>
+    
+    <div class="test-section">
+        <h2>Test Configuration</h2>
+        <div class="form-group">
+            <label for="test-url">Supabase URL:</label>
+            <input type="text" id="test-url" value="https://cdnmyzeqavoygcayacim.supabase.co" style="width: 100%; padding: 8px;">
+        </div>
+        <div class="form-group">
+            <label for="test-key">Anon Key:</label>
+            <textarea id="test-key" rows="3" style="width: 100%; padding: 8px;">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbm15emVxYXZveWdjYXlhY2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjkxNzIsImV4cCI6MjA5MDQ0NTE3Mn0.Tf1E0qqtZnEwD01D-bYVvE1HFN7A9ScxP25HamByf0U</textarea>
+        </div>
+        <button onclick="runAllTests()">🚀 Run All Tests</button>
+    </div>
+
+    <div id="test-results"></div>
+
+    <script>
+        const testResults = [];
+
+        function addResult(test, status, message, details = null) {
+            testResults.push({ test, status, message, details });
+            updateResults();
+        }
+
+        function updateResults() {
+            const resultsDiv = document.getElementById('test-results');
+            const html = testResults.map(result => `
+                <div class="result ${result.status}">
+                    <strong>${result.test}:</strong> ${result.status.toUpperCase()} - ${result.message}
+                    ${result.details ? `<pre>${result.details}</pre>` : ''}
+                </div>
+            `).join('');
+            resultsDiv.innerHTML = html;
+        }
+
+        async function testBasicConnection() {
+            const url = document.getElementById('test-url').value;
+            const key = document.getElementById('test-key').value;
+
+            try {
+                // Test 1: Basic HTTP connection
+                addResult('HTTP Connection', 'info', 'Testing basic HTTP connection...');
+                
+                const response = await fetch(`${url}/rest/v1/`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': key,
+                        'Authorization': `Bearer ${key}`
+                    }
+                });
+
+                if (response.ok) {
+                    addResult('HTTP Connection', 'success', 'HTTP connection successful', `Status: ${response.status}`);
+                } else {
+                    const errorText = await response.text();
+                    addResult('HTTP Connection', 'error', `HTTP failed: ${response.status}`, errorText);
+                    return false;
+                }
+
+                // Test 2: Supabase client initialization
+                addResult('Supabase Client', 'info', 'Testing Supabase client initialization...');
+                
+                const supabase = window.supabase.createClient(url, key);
+                
+                if (supabase && typeof supabase.from === 'function') {
+                    addResult('Supabase Client', 'success', 'Supabase client initialized successfully');
+                } else {
+                    addResult('Supabase Client', 'error', 'Supabase client initialization failed');
+                    return false;
+                }
+
+                // Test 3: Database query
+                addResult('Database Query', 'info', 'Testing database query...');
+                
+                const { data, error } = await supabase.from('categories').select('count').limit(1);
+                
+                if (error) {
+                    if (error.code === 'PGRST116') {
+                        addResult('Database Query', 'warning', 'Connected but tables not created yet', `Error: ${error.message}`);
+                    } else {
+                        addResult('Database Query', 'error', `Database query failed: ${error.message}`, `Code: ${error.code}`);
+                    }
+                } else {
+                    addResult('Database Query', 'success', 'Database query successful', `Data: ${JSON.stringify(data)}`);
+                }
+
+                // Test 4: Auth service
+                addResult('Auth Service', 'info', 'Testing authentication service...');
+                
+                const { data: authData, error: authError } = await supabase.auth.getSession();
+                
+                if (authError) {
+                    addResult('Auth Service', 'error', `Auth service error: ${authError.message}`);
+                } else {
+                    addResult('Auth Service', 'success', 'Auth service working', `Session: ${authData.session ? 'Active' : 'None'}`);
+                }
+
+                return true;
+
+            } catch (error) {
+                addResult('Connection Test', 'error', `Unexpected error: ${error.message}`, error.stack);
+                return false;
+            }
+        }
+
+        async function testURLValidation() {
+            const url = document.getElementById('test-url').value;
+            
+            addResult('URL Validation', 'info', 'Validating Supabase URL...');
+            
+            if (!url.startsWith('https://')) {
+                addResult('URL Validation', 'error', 'URL must start with https://');
+                return false;
+            }
+            
+            if (!url.includes('.supabase.co')) {
+                addResult('URL Validation', 'error', 'URL must be a Supabase project URL');
+                return false;
+            }
+            
+            if (url.includes('your-project-id')) {
+                addResult('URL Validation', 'error', 'URL contains placeholder text');
+                return false;
+            }
+            
+            addResult('URL Validation', 'success', 'URL format is valid');
+            return true;
+        }
+
+        async function testKeyValidation() {
+            const key = document.getElementById('test-key').value;
+            
+            addResult('Key Validation', 'info', 'Validating API key...');
+            
+            if (!key.startsWith('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9')) {
+                addResult('Key Validation', 'error', 'Key does not have valid JWT format');
+                return false;
+            }
+            
+            if (key.length < 100) {
+                addResult('Key Validation', 'error', 'Key appears to be too short');
+                return false;
+            }
+            
+            try {
+                // Try to decode the JWT
+                const parts = key.split('.');
+                if (parts.length !== 3) {
+                    addResult('Key Validation', 'error', 'Key is not a valid JWT token');
+                    return false;
+                }
+                
+                const payload = JSON.parse(atob(parts[1]));
+                addResult('Key Validation', 'success', 'Key format is valid', `Issued by: ${payload.iss}, Role: ${payload.role}`);
+                return true;
+                
+            } catch (error) {
+                addResult('Key Validation', 'error', `Key decoding failed: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testProjectStatus() {
+            const url = document.getElementById('test-url').value;
+            
+            addResult('Project Status', 'info', 'Checking project status...');
+            
+            try {
+                // Try to access the project health endpoint
+                const response = await fetch(`${url}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': document.getElementById('test-key').value
+                    }
+                });
+                
+                if (response.ok) {
+                    addResult('Project Status', 'success', 'Project is active and healthy');
+                } else if (response.status === 404) {
+                    addResult('Project Status', 'warning', 'Health endpoint not found, but project might be active');
+                } else {
+                    addResult('Project Status', 'warning', `Project status unclear: ${response.status}`);
+                }
+                
+            } catch (error) {
+                addResult('Project Status', 'warning', `Could not verify project status: ${error.message}`);
+            }
+        }
+
+        async function runAllTests() {
+            testResults.length = 0; // Clear previous results
+            
+            // Run tests in sequence
+            await testURLValidation();
+            await testKeyValidation();
+            await testProjectStatus();
+            await testBasicConnection();
+            
+            // Summary
+            const success = testResults.filter(r => r.status === 'success').length;
+            const warnings = testResults.filter(r => r.status === 'warning').length;
+            const errors = testResults.filter(r => r.status === 'error').length;
+            
+            addResult('Summary', 'info', `Tests completed: ${success} passed, ${warnings} warnings, ${errors} errors`);
+            
+            if (errors === 0) {
+                addResult('Conclusion', 'success', '✅ Your Supabase configuration appears to be working!');
+            } else {
+                addResult('Conclusion', 'error', '❌ There are configuration issues that need to be resolved');
+            }
+        }
+
+        // Auto-run on page load
+        window.addEventListener('load', () => {
+            console.log('Connection test page loaded. Click "Run All Tests" to start diagnostics.');
+        });
+    </script>
+</body>
+</html>

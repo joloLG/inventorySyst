@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory System - Configuration Setup</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #bee5eb;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #ecf0f1;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Inventory System - Configuration Setup</h1>
+        
+        <div class="info">
+            <strong>📋 Setup Required:</strong> Before using the inventory system, you need to configure your Supabase connection. 
+            Follow the steps below to set up your environment variables.
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('quick-setup')">Quick Setup</div>
+            <div class="tab" onclick="showTab('manual')">Manual Setup</div>
+            <div class="tab" onclick="showTab('environment')">Environment Variables</div>
+        </div>
+
+        <!-- Quick Setup Tab -->
+        <div id="quick-setup" class="tab-content active">
+            <h3>Quick Configuration Setup</h3>
+            <p>Enter your Supabase credentials below to automatically configure the system:</p>
+            
+            <form id="config-form">
+                <div class="form-group">
+                    <label for="supabase-url">Supabase Project URL *</label>
+                    <input type="url" id="supabase-url" placeholder="https://your-project-id.supabase.co" required>
+                    <small>Found in your Supabase project settings</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="supabase-anon-key">Supabase Anon Key *</label>
+                    <textarea id="supabase-anon-key" rows="3" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required></textarea>
+                    <small>Found in your Supabase project API settings</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="supabase-service-key">Service Role Key (Optional)</label>
+                    <textarea id="supabase-service-key" rows="3" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></textarea>
+                    <small>Required for admin operations, keep this secure</small>
+                </div>
+                
+                <button type="submit">Save Configuration</button>
+            </form>
+            
+            <div id="config-result"></div>
+        </div>
+
+        <!-- Manual Setup Tab -->
+        <div id="manual" class="tab-content">
+            <h3>Manual Configuration</h3>
+            <p>You can manually configure the system by editing the configuration files:</p>
+            
+            <h4>Option 1: Edit config.js directly</h4>
+            <div class="code-block">
+// js/config.js
+const SUPABASE_URL = 'https://your-project-id.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-key-here';
+            </div>
+            
+            <h4>Option 2: Use browser localStorage</h4>
+            <div class="code-block">
+// Open browser console and run:
+localStorage.setItem('inventory_config', JSON.stringify({
+    supabase: {
+        url: 'https://your-project-id.supabase.co',
+        anonKey: 'your-anon-key-here'
+    }
+}));
+            </div>
+            
+            <h4>Option 3: Set window.env before loading</h4>
+            <div class="code-block">
+// In your HTML before loading scripts:
+window.env = {
+    SUPABASE_URL: 'https://your-project-id.supabase.co',
+    SUPABASE_ANON_KEY: 'your-anon-key-here'
+};
+            </div>
+        </div>
+
+        <!-- Environment Variables Tab -->
+        <div id="environment" class="tab-content">
+            <h3>Environment Variables Setup</h3>
+            
+            <h4>For Development (Node.js)</h4>
+            <p>Create a `.env` file in your project root:</p>
+            <div class="code-block">
+# .env
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+APP_NAME=Inventory Management System
+NODE_ENV=development
+            </div>
+            
+            <h4>For Production</h4>
+            <p>Set environment variables in your hosting environment:</p>
+            <div class="code-block">
+# Example for various platforms
+export SUPABASE_URL="https://your-project-id.supabase.co"
+export SUPABASE_ANON_KEY="your-anon-key-here"
+export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key-here"
+export NODE_ENV="production"
+            </div>
+            
+            <h4>For Static Hosting (Vercel, Netlify, etc.)</h4>
+            <p>Most static hosts provide environment variable settings in their dashboard:</p>
+            <ul>
+                <li><strong>Vercel:</strong> Project Settings → Environment Variables</li>
+                <li><strong>Netlify:</strong> Site settings → Build & deploy → Environment</li>
+                <li><strong>GitHub Pages:</strong> Use build process or embed in script</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Handle configuration form submission
+        document.getElementById('config-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const url = document.getElementById('supabase-url').value;
+            const anonKey = document.getElementById('supabase-anon-key').value;
+            const serviceKey = document.getElementById('supabase-service-key').value;
+            
+            const config = {
+                supabase: {
+                    url: url,
+                    anonKey: anonKey,
+                    serviceRoleKey: serviceKey
+                }
+            };
+            
+            try {
+                // Save to localStorage
+                localStorage.setItem('inventory_config', JSON.stringify(config));
+                
+                // Test the configuration
+                const response = await fetch(`${url}/rest/v1/`, {
+                    headers: {
+                        'apikey': anonKey,
+                        'Authorization': `Bearer ${anonKey}`
+                    }
+                });
+                
+                if (response.ok) {
+                    document.getElementById('config-result').innerHTML = `
+                        <div class="success">
+                            ✅ Configuration saved and validated successfully! 
+                            You can now <a href="index.html">open the inventory system</a>.
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Configuration test failed');
+                }
+                
+            } catch (error) {
+                document.getElementById('config-result').innerHTML = `
+                    <div class="error">
+                        ❌ Error saving configuration: ${error.message}
+                        <br>Please check your Supabase URL and keys.
+                    </div>
+                `;
+            }
+        });
+
+        // Check if configuration already exists
+        window.addEventListener('load', () => {
+            const existingConfig = localStorage.getItem('inventory_config');
+            if (existingConfig) {
+                try {
+                    const config = JSON.parse(existingConfig);
+                    document.getElementById('supabase-url').value = config.supabase?.url || '';
+                    document.getElementById('supabase-anon-key').value = config.supabase?.anonKey || '';
+                    document.getElementById('supabase-service-key').value = config.supabase?.serviceRoleKey || '';
+                } catch (e) {
+                    console.warn('Invalid existing config found');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .pending { color: orange; }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2980b9; }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Inventory System Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>Configuration Test</h2>
+        <button onclick="testConfiguration()">Test Supabase Configuration</button>
+        <div id="config-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Database Connection Test</h2>
+        <button onclick="testDatabaseConnection()">Test Database Connection</button>
+        <div id="db-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Authentication Test</h2>
+        <button onclick="testAuth()">Test Authentication</button>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>CRUD Operations Test</h2>
+        <button onclick="testCRUD()">Test CRUD Operations</button>
+        <div id="crud-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Run All Tests</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        // Test configuration (update these with your actual values)
+        const TEST_CONFIG = {
+            supabaseUrl: 'YOUR_SUPABASE_URL',
+            supabaseAnonKey: 'YOUR_SUPABASE_ANON_KEY',
+            testEmail: 'test@example.com',
+            testPassword: 'testpassword123'
+        };
+
+        let supabase;
+        let testResults = [];
+
+        function initializeSupabase() {
+            if (!supabase) {
+                supabase = window.supabase.createClient(TEST_CONFIG.supabaseUrl, TEST_CONFIG.supabaseAnonKey);
+            }
+        }
+
+        function logResult(testName, status, message = '') {
+            testResults.push({ test: testName, status, message });
+            updateResultsDisplay();
+        }
+
+        function updateResultsDisplay() {
+            const resultsDiv = document.getElementById('results');
+            const passed = testResults.filter(r => r.status === 'success').length;
+            const failed = testResults.filter(r => r.status === 'error').length;
+            const pending = testResults.filter(r => r.status === 'pending').length;
+
+            resultsDiv.innerHTML = `
+                <h3>Test Results Summary</h3>
+                <p><span class="success">Passed: ${passed}</span> | 
+                   <span class="error">Failed: ${failed}</span> | 
+                   <span class="pending">Pending: ${pending}</span></p>
+                <h4>Details:</h4>
+                ${testResults.map(r => `
+                    <div class="${r.status}">
+                        <strong>${r.test}:</strong> ${r.status.toUpperCase()} ${r.message ? '- ' + r.message : ''}
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        async function testConfiguration() {
+            const resultDiv = document.getElementById('config-result');
+            resultDiv.innerHTML = '<div class="pending">Testing configuration...</div>';
+
+            try {
+                if (TEST_CONFIG.supabaseUrl === 'YOUR_SUPABASE_URL' || 
+                    TEST_CONFIG.supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY') {
+                    throw new Error('Please update TEST_CONFIG with your actual Supabase credentials');
+                }
+
+                initializeSupabase();
+                logResult('Configuration', 'success', 'Supabase client initialized');
+                resultDiv.innerHTML = '<div class="success">✓ Configuration valid</div>';
+            } catch (error) {
+                logResult('Configuration', 'error', error.message);
+                resultDiv.innerHTML = `<div class="error">✗ Configuration error: ${error.message}</div>`;
+            }
+        }
+
+        async function testDatabaseConnection() {
+            const resultDiv = document.getElementById('db-result');
+            resultDiv.innerHTML = '<div class="pending">Testing database connection...</div>';
+
+            try {
+                initializeSupabase();
+                
+                // Test basic connection by trying to fetch categories
+                const { data, error } = await supabase.from('categories').select('count').limit(1);
+                
+                if (error) {
+                    // If table doesn't exist, that's expected for new setup
+                    if (error.code === 'PGRST116') {
+                        logResult('Database Connection', 'success', 'Connected (tables not created yet)');
+                        resultDiv.innerHTML = '<div class="success">✓ Database connected (run SQL setup to create tables)</div>';
+                    } else {
+                        throw error;
+                    }
+                } else {
+                    logResult('Database Connection', 'success', 'Connected and tables exist');
+                    resultDiv.innerHTML = '<div class="success">✓ Database connected successfully</div>';
+                }
+            } catch (error) {
+                logResult('Database Connection', 'error', error.message);
+                resultDiv.innerHTML = `<div class="error">✗ Database connection failed: ${error.message}</div>`;
+            }
+        }
+
+        async function testAuth() {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.innerHTML = '<div class="pending">Testing authentication...</div>';
+
+            try {
+                initializeSupabase();
+                
+                // Test current session
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) throw error;
+                
+                if (session) {
+                    logResult('Authentication', 'success', 'User logged in');
+                    resultDiv.innerHTML = '<div class="success">✓ Authentication working (user logged in)</div>';
+                } else {
+                    logResult('Authentication', 'success', 'No active session (expected)');
+                    resultDiv.innerHTML = '<div class="success">✓ Authentication system ready (no active session)</div>';
+                }
+            } catch (error) {
+                logResult('Authentication', 'error', error.message);
+                resultDiv.innerHTML = `<div class="error">✗ Authentication test failed: ${error.message}</div>`;
+            }
+        }
+
+        async function testCRUD() {
+            const resultDiv = document.getElementById('crud-result');
+            resultDiv.innerHTML = '<div class="pending">Testing CRUD operations...</div>';
+
+            try {
+                initializeSupabase();
+                
+                // This test requires a logged-in user
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (!session) {
+                    logResult('CRUD Operations', 'pending', 'Requires logged-in user');
+                    resultDiv.innerHTML = '<div class="pending">⚠ CRUD test requires logged-in user</div>';
+                    return;
+                }
+
+                // Test category creation
+                const testCategory = {
+                    name: `Test Category ${Date.now()}`,
+                    description: 'Test category for automated testing'
+                };
+
+                const { data: category, error: createError } = await supabase
+                    .from('categories')
+                    .insert(testCategory)
+                    .select()
+                    .single();
+
+                if (createError) {
+                    if (createError.code === 'PGRST116') {
+                        logResult('CRUD Operations', 'pending', 'Tables not created yet');
+                        resultDiv.innerHTML = '<div class="pending">⚠ CRUD test requires database tables to be created</div>';
+                    } else {
+                        throw createError;
+                    }
+                    return;
+                }
+
+                logResult('CRUD Operations', 'success', 'Category created successfully');
+
+                // Test category update
+                const { error: updateError } = await supabase
+                    .from('categories')
+                    .update({ description: 'Updated test description' })
+                    .eq('id', category.id);
+
+                if (updateError) throw updateError;
+                logResult('CRUD Operations', 'success', 'Category updated successfully');
+
+                // Test category read
+                const { data: readData, error: readError } = await supabase
+                    .from('categories')
+                    .select('*')
+                    .eq('id', category.id)
+                    .single();
+
+                if (readError) throw readError;
+                logResult('CRUD Operations', 'success', 'Category read successfully');
+
+                // Test category delete
+                const { error: deleteError } = await supabase
+                    .from('categories')
+                    .delete()
+                    .eq('id', category.id);
+
+                if (deleteError) throw deleteError;
+                logResult('CRUD Operations', 'success', 'Category deleted successfully');
+
+                resultDiv.innerHTML = '<div class="success">✓ All CRUD operations working</div>';
+
+            } catch (error) {
+                logResult('CRUD Operations', 'error', error.message);
+                resultDiv.innerHTML = `<div class="error">✗ CRUD test failed: ${error.message}</div>`;
+            }
+        }
+
+        async function runAllTests() {
+            testResults = [];
+            await testConfiguration();
+            await testDatabaseConnection();
+            await testAuth();
+            await testCRUD();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateResultsDisplay();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory System - Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2980b9; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Inventory System - Debug Page</h1>
+    
+    <div class="section">
+        <h2>Script Loading Status</h2>
+        <div id="script-status"></div>
+    </div>
+
+    <div class="section">
+        <h2>Configuration Status</h2>
+        <div id="config-status"></div>
+        <button onclick="testConfig()">Test Configuration</button>
+    </div>
+
+    <div class="section">
+        <h2>Global Variables</h2>
+        <div id="globals-status"></div>
+        <button onclick="checkGlobals()">Check Globals</button>
+    </div>
+
+    <div class="section">
+        <h2>Module Initialization</h2>
+        <div id="module-status"></div>
+        <button onclick="testModules()">Test Modules</button>
+    </div>
+
+    <div class="section">
+        <h2>Supabase Connection</h2>
+        <div id="supabase-status"></div>
+        <button onclick="testSupabase()">Test Supabase</button>
+    </div>
+
+    <div class="section">
+        <h2>Run All Tests</h2>
+        <button onclick="runAllTests()">Run Complete Diagnostic</button>
+        <div id="all-results"></div>
+    </div>
+
+    <script>
+        function updateStatus(elementId, status, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<span class="${status}">${status.toUpperCase()}: ${message}</span>`;
+        }
+
+        function checkScriptLoading() {
+            const scripts = [
+                'config-env.js',
+                'config.js', 
+                'auth.js',
+                'database.js',
+                'ui.js',
+                'app.js'
+            ];
+            
+            let results = [];
+            scripts.forEach(script => {
+                const loaded = document.querySelector(`script[src*="${script}"]`);
+                results.push(`${script}: ${loaded ? '✅' : '❌'}`);
+            });
+            
+            updateStatus('script-status', 'info', results.join('<br>'));
+        }
+
+        function testConfig() {
+            try {
+                if (window.configManager) {
+                    const validation = window.configManager.validateConfiguration();
+                    if (validation.isValid) {
+                        updateStatus('config-status', 'success', 'Configuration valid and loaded');
+                    } else {
+                        updateStatus('config-status', 'error', `Configuration issues: ${validation.issues.join(', ')}`);
+                    }
+                } else {
+                    updateStatus('config-status', 'error', 'configManager not found');
+                }
+            } catch (error) {
+                updateStatus('config-status', 'error', `Config test failed: ${error.message}`);
+            }
+        }
+
+        function checkGlobals() {
+            const globals = [
+                'supabase',
+                'configManager', 
+                'authManager',
+                'databaseManager',
+                'uiManager',
+                'inventoryApp'
+            ];
+            
+            let results = [];
+            globals.forEach(global => {
+                const exists = window[global] !== undefined;
+                const type = exists ? typeof window[global] : 'undefined';
+                results.push(`${global}: ${exists ? '✅' : '❌'} (${type})`);
+            });
+            
+            updateStatus('globals-status', 'info', results.join('<br>'));
+        }
+
+        function testModules() {
+            try {
+                const modules = {
+                    'configManager': () => window.configManager?.isConfigurationValid(),
+                    'authManager': () => window.authManager?.getCurrentUser(),
+                    'databaseManager': () => window.databaseManager?.supabase !== null,
+                    'uiManager': () => window.uiManager?.currentView,
+                    'inventoryApp': () => window.inventoryApp?.version
+                };
+                
+                let results = [];
+                for (const [name, test] of Object.entries(modules)) {
+                    try {
+                        const result = test();
+                        results.push(`${name}: ✅ (${result})`);
+                    } catch (error) {
+                        results.push(`${name}: ❌ (${error.message})`);
+                    }
+                }
+                
+                updateStatus('module-status', 'info', results.join('<br>'));
+            } catch (error) {
+                updateStatus('module-status', 'error', `Module test failed: ${error.message}`);
+            }
+        }
+
+        async function testSupabase() {
+            try {
+                const supabase = window.configManager?.supabase || window.supabase;
+                if (!supabase) {
+                    updateStatus('supabase-status', 'error', 'Supabase client not found');
+                    return;
+                }
+
+                // Test basic connection
+                const { data, error } = await supabase.from('categories').select('count').limit(1);
+                
+                if (error) {
+                    if (error.code === 'PGRST116') {
+                        updateStatus('supabase-status', 'warning', 'Connected but tables not created yet');
+                    } else {
+                        updateStatus('supabase-status', 'error', `Supabase error: ${error.message}`);
+                    }
+                } else {
+                    updateStatus('supabase-status', 'success', 'Supabase connection successful');
+                }
+            } catch (error) {
+                updateStatus('supabase-status', 'error', `Supabase test failed: ${error.message}`);
+            }
+        }
+
+        async function runAllTests() {
+            const resultsDiv = document.getElementById('all-results');
+            resultsDiv.innerHTML = '<div class="warning">Running complete diagnostic...</div>';
+            
+            checkScriptLoading();
+            testConfig();
+            checkGlobals();
+            testModules();
+            await testSupabase();
+            
+            resultsDiv.innerHTML = '<div class="success">Complete diagnostic finished. Check individual sections above.</div>';
+            
+            // Show detailed info
+            console.log('=== INVENTORY SYSTEM DEBUG INFO ===');
+            console.log('Window object:', window);
+            console.log('Config Manager:', window.configManager);
+            console.log('Supabase:', window.supabase);
+            console.log('Auth Manager:', window.authManager);
+        }
+
+        // Auto-run basic checks on page load
+        window.addEventListener('load', () => {
+            checkScriptLoading();
+            checkGlobals();
+        });
+
+        // Load scripts dynamically for testing
+        function loadScripts() {
+            const scripts = [
+                'js/config-env.js',
+                'js/config.js',
+                'js/auth.js',
+                'js/database.js',
+                'js/ui.js',
+                'js/app.js'
+            ];
+
+            scripts.forEach((src, index) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => console.log(`Loaded: ${src}`);
+                script.onerror = () => console.error(`Failed to load: ${src}`);
+                document.head.appendChild(script);
+            });
+        }
+
+        // Add load scripts button
+        window.addEventListener('load', () => {
+            const section = document.querySelector('.section');
+            const button = document.createElement('button');
+            button.textContent = 'Load All Scripts';
+            button.onclick = loadScripts;
+            section.appendChild(button);
+        });
+    </script>
+</body>
+</html>
