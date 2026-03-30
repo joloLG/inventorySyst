@@ -1,14 +1,15 @@
 // Supabase Configuration
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://cdnmyzeqavoygcayacim.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbm15emVxYXZveWdjYXlhY2ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjkxNzIsImV4cCI6MjA5MDQ0NTE3Mn0.Tf1E0qqtZnEwD01D-bYVvE1HFN7A9ScxP25HamByf0U';
 
-// Initialize Supabase (only if not already initialized by config manager)
-if (!window.supabase) {
-    window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase
+let supabase;
+
+if (typeof window.supabase !== 'undefined') {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+    console.error('Supabase library not loaded. Please check the script tag in index.html');
 }
-
-// Get supabase instance (prefer config manager if available)
-const supabase = window.configManager ? window.configManager.supabase : window.supabase;
 
 // App Configuration
 const APP_CONFIG = {

@@ -50,6 +50,11 @@ class AuthManager {
     }
 
     async handleLogin() {
+        if (!supabase) {
+            this.showMessage('Authentication system not available', 'error');
+            return;
+        }
+        
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
 
@@ -77,6 +82,11 @@ class AuthManager {
     }
 
     async handleRegister() {
+        if (!supabase) {
+            this.showMessage('Authentication system not available', 'error');
+            return;
+        }
+        
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
         const name = document.getElementById('register-name').value;
@@ -141,6 +151,11 @@ class AuthManager {
     }
 
     async handleLogout() {
+        if (!supabase) {
+            this.showMessage('Authentication system not available', 'error');
+            return;
+        }
+        
         try {
             const { error } = await supabase.auth.signOut();
             if (error) throw error;
@@ -156,6 +171,12 @@ class AuthManager {
 
     async checkSession() {
         try {
+            if (!supabase) {
+                console.error('Supabase client not initialized');
+                this.showAuthSection();
+                return;
+            }
+            
             const { data: { session } } = await supabase.auth.getSession();
             
             if (session) {
@@ -225,23 +246,8 @@ class AuthManager {
     }
 }
 
-// Get supabase instance from config manager or fallback
-const supabase = window.configManager ? window.configManager.supabase : window.supabase;
+// Initialize Auth Manager
+const authManager = new AuthManager();
 
-// Initialize Auth Manager only after DOM is ready
-let authManager;
-
-function initializeAuthManager() {
-    if (!authManager) {
-        authManager = new AuthManager();
-        window.authManager = authManager;
-    }
-    return authManager;
-}
-
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeAuthManager);
-} else {
-    initializeAuthManager();
-}
+// Make it globally available
+window.authManager = authManager;

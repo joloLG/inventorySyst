@@ -23,8 +23,7 @@ class InventoryApp {
     async waitForAuth() {
         return new Promise((resolve) => {
             const checkAuth = () => {
-                if (window.authManager && window.authManager.currentUser !== undefined) {
-                    console.log('Authentication system ready');
+                if (authManager && authManager.currentUser !== undefined) {
                     resolve();
                 } else {
                     setTimeout(checkAuth, 100);
@@ -101,19 +100,9 @@ class InventoryApp {
 }
 
 // Initialize the application when DOM is ready
-function initializeInventoryApp() {
-    if (!window.inventoryApp) {
-        window.inventoryApp = new InventoryApp();
-    }
-    return window.inventoryApp;
-}
-
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeInventoryApp);
-} else {
-    initializeInventoryApp();
-}
+document.addEventListener('DOMContentLoaded', () => {
+    window.inventoryApp = new InventoryApp();
+});
 
 // Global error handling
 window.addEventListener('error', (event) => {

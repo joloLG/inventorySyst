@@ -1,7 +1,7 @@
 // Database Operations Module
 class DatabaseManager {
     constructor() {
-        this.supabase = window.configManager ? window.configManager.supabase : null;
+        this.supabase = supabase;
     }
 
     // Category Operations

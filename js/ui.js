@@ -579,20 +579,8 @@ class UIManager {
     }
 }
 
-// Initialize UI Manager only after DOM is ready
-let uiManager;
+// Initialize UI Manager
+const uiManager = new UIManager();
 
-function initializeUIManager() {
-    if (!uiManager) {
-        uiManager = new UIManager();
-        window.uiManager = uiManager;
-    }
-    return uiManager;
-}
-
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeUIManager);
-} else {
-    initializeUIManager();
-}
+// Make it globally available
+window.uiManager = uiManager;
